@@ -54,28 +54,9 @@ class Game():
         mixer.init()
         self.mixer = mixer.music
         self.mixer.load('{}/Buzzer.mp3'.format(os.getcwd()))
-    
-        self.players = None
         
         self.waitMin = 3*60
         self.waitMax = 5*60
-        
-        self.sleepTime = None
-        self.deck = None
-        
-        
-        self.player = None
-        self.opponent = None
-        
-        self.status='paused'
-        
-        
-        ### debug mode
-        self.debug = False
-        
-        if self.debug:
-            self.waitMin = 0
-            self.waitMax = 2
         
         ### setup
         self.get_names()
@@ -92,7 +73,7 @@ class Game():
 
 
     def change_status(self, title):
-#        print(title)
+        
         self.status = title
         self.root.title(title)
 
