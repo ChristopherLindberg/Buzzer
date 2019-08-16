@@ -31,7 +31,10 @@ class Game():
         # text message
         self.message = tk.StringVar()
         self.message.set('Start Text')
-               
+
+        # player status
+        self.playerStatusMessage = tk.StringVar()
+        
         # variables
         self.status = 'Paused'
         
@@ -47,7 +50,7 @@ class Game():
         self.message_box()
         self.pause_button()
         self.start_button()
-    
+        self.player_status()
         
         ### GAME related stuff
         # init mixer
@@ -67,7 +70,7 @@ class Game():
         for rowValue in range(6):
             tk.Grid.rowconfigure(self.root, rowValue, weight=1)
         
-        for columnValue in range(4):
+        for columnValue in range(6):
             tk.Grid.columnconfigure(self.root, columnValue, weight=1)
 
 
@@ -96,6 +99,12 @@ class Game():
             if len(self.deck) == 0:
                 self.create_deck()
                     
+    def update_player_status_message(self):
+        string = ''
+        for player in self.players:
+            string += '{}\t{}\n'.format(player.name, player.count)
+
+        self.playerStatusMessage.set(string)
 
 
     def message_box(self):
@@ -104,6 +113,12 @@ class Game():
         
         # autoscale
         outputMessage.grid(row=0, column=0, rowspan=5, columnspan=4, sticky=tk.EW)
+
+    def player_status(self):
+        outputMessage = tk.Message(self.root, text='', textvariable = self.playerStatusMessage, font=("Times", self.fontSize))
+        
+        # autoscale
+        outputMessage.grid(row=0, column=4, rowspan=6, columnspan=2, sticky=tk.NSEW)
 
     def pause_button(self):
         pauseVariable = tk.StringVar()
@@ -147,37 +162,24 @@ class Game():
 
 
     def create_deck(self):
-        
-        cards = get_cards()
-        
-        deck = []
-        for card in cards:
-            
-            for i in range(card.lives):
-                
-                newCard = Card(question = card.question)
-                deck.append(newCard)
+        self.deck = []
+        for card in get_cards():
+            self.deck += [Card(question=card.question) for i in range(card.lives)]
     
-    
-        self.deck = deck
         self.message.set('Shuffling cards')
         shuffle(self.deck)
 
 
     def pick_opponent(self):
-        
-        usedNames = [player.name for player in self.players if player.name != self.playerName]
-        self.opponentName = usedNames[randint(0, len(usedNames)-1)]
+        opponents = [player for player in self.players if player.name != self.player.name]
+        self.opponent = opponents[randint(0, len(opponents)-1)]
+
+
 
    
     def pick_player(self):
-        usedNames = [player.name for player in self.players]
-        self.playerName = usedNames[randint(0, len(usedNames)-1)]
+        self.player = self.players[randint(0, len(self.players)-1)]
      
-    def reset(self): 
-        self.playerName = None
-        self.opponentName = None
-        
         
     def get_names(self):
         #Creates a list of names and checks with the user that the list is correct.
@@ -189,13 +191,12 @@ class Game():
             while True:
                 name = input("Enter name: ")
                 if name.lower() in ['exit', 'e', 'q', 'quit']:
-                    break;
+                    break
                 else:
                     names.append(name)
                     print("Enter exit to quit names")
             
-            for i in range(3):
-                shuffle(names)
+            shuffle(names)
             
             print("I found {} names.".format(len(names)))
             print("The names are:")
@@ -211,14 +212,7 @@ class Game():
 
     
     def draw_card(self):
-        
-        # get player
-        self.pick_player()
-        
-        # get opponent
-        self.pick_opponent()
-        
-    
+ 
         cardIndex = randint(0, len(self.deck) - 1)
         card = self.deck[cardIndex] #selected card
         
@@ -231,10 +225,17 @@ class Game():
         printString = card.question
         
         # input player
-        printString = re.sub('%PLAYER%', self.playerName, printString)
+        if '%PLAYER%' in printString:
+            self.pick_player()
+            printString = re.sub('%PLAYER%', self.player.name, printString)
+            self.player.count += 1
         
         # input opponent
-        printString = re.sub('%OPPONENT%', self.opponentName, printString)
+        if '%OPPONENT%' in printString:
+           self.pick_opponent()
+           printString = re.sub('%OPPONENT%', self.opponent.name, printString)
+           
+           self.opponent.count += 1
         
         
         # set question into box
@@ -242,12 +243,10 @@ class Game():
         
         # play sound
         self.mixer.play()
-        
-        # reset
-        self.reset()
-        
-        
-                                               
+
+        # update status
+        self.update_player_status_message()
+
 # setup game
 game = Game(font=40)
 
